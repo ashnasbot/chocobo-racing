@@ -17,7 +17,6 @@ console.log("-*- Birbracing begin -*-")
 client.openrom("c:\\users\\ashnas\\desktop\\bizhawk\\psx\\iso\\Final Fantasy 7 CD2.cue")
 --local slot = math.random(1, 4) -- S class disabled as it's too quick
 local slot = math.random(1, 3)
-slot = 1
 console.log("loading slot " .. slot .. " time " .. os.time())
 savestate.loadslot(slot)
 local classes = {
@@ -68,7 +67,7 @@ for i, birb in pairs(birbdata) do
 
 	memory.write_u16_le(base+offset.jockey, birb["jockey"])
 	memory.write_u16_le(base+offset.rs1, birb["run"])
-	memory.write_u16_le(base+offset.rs2, birb["run"])
+	--memory.write_u16_le(base+offset.terrainmask, 0x03)
 	memory.write_u16_le(base+offset.wTopSpeed, birb["speed"])
 	memory.write_u16_le(base+offset.intel, birb["intel"])
 	memory.write_u16_le(base+offset.stamina, birb["stam"])

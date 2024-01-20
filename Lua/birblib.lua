@@ -104,7 +104,7 @@ local function set_gil(value)
 end
 
 
-local debug = false
+local debug = true
 local function birb_debug(birb)
 	local base = offset.birbs[birb]
 	--local course = memory.read_u16_be(base+offset.course)        -- 20xx : DE = long course, 03 = short
@@ -128,7 +128,7 @@ local function birb_debug(birb)
 	local namec = decode_name(string.format('%X',name)) .. decode_name(string.format('%X',name2))
 	local output = string.format("%6s: spd:%d rs:%d,%d accel:%X coop:%X int:%X stam:%d/%d jockey:%X sprint:%s", namec, top_speed//34, rs2, rs1, acc, coop, intel, stam//10, stammax//10, jockey, sprint)
 	print(output)
-	if debug then
+	if debug == true then
 		local dump = memory.read_bytes_as_array(base, 0xa4)
 		for i, e in ipairs(dump) do
 			dump[i] = string.format("%02x", e)
@@ -179,13 +179,29 @@ end
 local function set_birb_colour(pos, colour)
 	local addr = offset.colours[pos]
 	local t = {}
-	for i = 0, 1 do
-		t[i+1] = (colour >> (i * 16)) & 0xFFFF
+	if (type(colour) == "table") then
+		-- {RR, GG, BB, AA}
+		t[2] = ((colour[1]<<8) | (colour[2])) & 0xFFFF;
+		t[1] = ((colour[3]<<8) | (colour[4])) & 0xFFFF;
+	elseif (type(colour) == "string") then
+		-- #RRGGBBAA
+		t[2] = tonumber(colour:sub(2,5), 16)
+		t[1] = tonumber(colour:sub(6,9), 16)
+	else
+		for i = 0, 1 do
+			t[i+1] = (colour >> (i * 16)) & 0xFFFF
+		end
 	end
+	-- Fix endianness
+	t[1] = ((t[1]>>8) | (t[1]<<8)) & 0xFFFF;
+	t[2] = ((t[2]>>8) | (t[2]<<8)) & 0xFFFF;
+	--
 	local v1 = string.upper(string.format("80%06x %04x", addr, t[2]))
 	local v2 = string.upper(string.format("80%06x %04x", addr + 2, t[1]))
-	client.addcheat(v1)  -- g, r
-	client.addcheat(v2)  -- a, b
+	-- these need to be set as cheats, as the data is reloaded at a specific frame
+	-- which we cannot hook
+	client.addcheat(v1) -- r, g
+	client.addcheat(v2) -- b, a
 	table.insert(cheats, v1)
 	table.insert(cheats, v2)
 end
@@ -233,7 +249,7 @@ local function load_birbs(class)
 					local key = table.remove(keys, 1)
 					birb = birbdata[key]
 					if birb["class"] == class then
-						print("Picked", key)
+						print("Picked", key, "in slot", slot)
 						birb["name"] = key
 						birb["picked"] = true
 						break
