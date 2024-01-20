@@ -104,7 +104,7 @@ local function set_gil(value)
 end
 
 
-local debug = true
+local debug = false
 local function birb_debug(birb)
 	local base = offset.birbs[birb]
 	--local course = memory.read_u16_be(base+offset.course)        -- 20xx : DE = long course, 03 = short
