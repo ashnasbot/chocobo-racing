@@ -145,14 +145,14 @@ while true do
 			pos[choco5pos] = 5
 			pos[choco6pos] = 6
 			for i = 1,6 do
-				local base = offset.birbs[pos[i]]
+				if pos[i] == 1 and winner == false then
+					local base = offset.birbs[i]
 				if base ~= nil then
 					local name = memory.read_u32_be(base+offset.name)
 					local name2 = memory.read_u16_be(base+offset.name+4)
 					local namec = fn.decode_name(string.format('%X',name)) .. fn.decode_name(string.format('%X',name2))
 					local str = string.format("%d: %s", i, namec)
 					gui.drawText(16, i*16, str)
-					if pos[i] == 1 and winner == false then
 						winner = true
 						local msg = {nickname = "ashnasbot",
 							channel = "ashnas", --FIXME: Hard coded!!
