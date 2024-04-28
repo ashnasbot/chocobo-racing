@@ -1,3 +1,5 @@
+local channel = "ashnas"
+
 local json = require "json"
 local fn = require "birblib"
 local offset = require "offsets"
@@ -17,6 +19,7 @@ console.log("-*- Birbracing begin -*-")
 client.openrom("c:\\users\\ashnas\\desktop\\bizhawk\\psx\\iso\\Final Fantasy 7 CD2.cue")
 --local slot = math.random(1, 4) -- S class disabled as it's too quick
 local slot = math.random(1, 3)
+slot = 1
 console.log("loading slot " .. slot .. " time " .. os.time())
 savestate.loadslot(slot)
 local classes = {
@@ -43,7 +46,6 @@ fn.wait_frames(30)
 
 console.log("In birb select")
 console.log("Sound On")
-client.SetSoundOn(true)
 console.log("Setting birb names")
 fn.wait_frames(30)
 
@@ -58,10 +60,14 @@ class B:
 ]]
 print("this is the ", fn.get_course_length(), "course")
 
+local birbnames = {}
+
 for i, birb in pairs(birbdata) do
 	local base = offset.birbs[i]
 	local location
 	if birb["picked"] == false then
+		local existing_name = fn.read_birb_name(base)
+		table.insert(birbnames, existing_name)
 		goto continue
 	end
 
@@ -83,6 +89,7 @@ for i, birb in pairs(birbdata) do
 	for pos=0, math.min(string.len(birb["name"])-1, 5) do
 		memory.writebyte(location + pos, string.byte(birb["name"], pos+1) - 0x20)
 	end
+	table.insert(birbnames, birb["name"])
 	::continue::
 end
 
@@ -90,9 +97,18 @@ for birb=1,6 do
 	fn.debug_birb(birb)
 end
 
+-- Start the prediction
+local msg = {
+	channel = channel,
+	title = "Chocobos",
+	data = json.encode(birbnames)
+}
+local res = comm.httpPost("http://localhost:8080/prediction", json.encode(msg))
+client.SetSoundOn(true)
+
 -- Birb carosel
 --local frames = 3180
-local frames = 3180
+local frames = 4980
 local time_to_start = frames // 60
 while frames > 0 do
 	for _=1,3 do
@@ -109,11 +125,12 @@ end
 fn.press_key("Start")
 fn.wait_frames(180)
 local message = {nickname = "ashnasbot",
-    channel = "ashnas", --FIXME: Hard coded!!
+    channel = channel,
 	message = "And They're off!",
 	type = "TWITCHCHATMESSAGE",
 	tags = {
-		response = 1
+		response = 1,
+		["display-name"] = "Ashnasbot"
 	}}
 local res = comm.httpPost("http://localhost:8080/replay_event", json.encode(message))
 console.log("Done selecting, race start!")
@@ -145,21 +162,20 @@ while true do
 			pos[choco5pos] = 5
 			pos[choco6pos] = 6
 			for i = 1,6 do
-				if pos[i] == 1 and winner == false then
-					local base = offset.birbs[i]
+				local base = offset.birbs[pos[i]]
 				if base ~= nil then
-					local name = memory.read_u32_be(base+offset.name)
-					local name2 = memory.read_u16_be(base+offset.name+4)
-					local namec = fn.decode_name(string.format('%X',name)) .. fn.decode_name(string.format('%X',name2))
+					local namec = fn.read_birb_name(base)
 					local str = string.format("%d: %s", i, namec)
 					gui.drawText(16, i*16, str)
+					if 1 == i and winner == false then
 						winner = true
 						local msg = {nickname = "ashnasbot",
-							channel = "ashnas", --FIXME: Hard coded!!
+							channel = channel,
 							message = string.format("%s is the winner!", namec),
 							type = "TWITCHCHATMESSAGE",
 							tags = {
-								response = 1
+								response = 1,
+								["display-name"] = "Ashnasbot"
 							}}
 						local res = comm.httpPost("http://localhost:8080/replay_event", json.encode(msg))
 					end
@@ -192,7 +208,7 @@ while true do
 		if choco5pos == 1 then client.exitCode(5) end
 		if choco6pos == 1 then client.exitCode(6) end
 		break
-	elseif frames % 60 == 0 then
+	elseif frames % 120 == 0 then
 		console.clear()
 		for birb=1,6 do
 			fn.debug_birb(birb)

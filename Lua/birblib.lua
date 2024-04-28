@@ -19,7 +19,7 @@ end
 local function press_key(key)
 	local input = shallowcopy(joypad.get(1) )
 	input[key] = true
-	for a=1,5 do
+	for _=1,5 do
 		joypad.set(input, 1)
 		emu.frameadvance();
 	end
@@ -270,11 +270,19 @@ local function get_course_length()
 	return string.format("%x", memory.read_u16_le(offset.birbs[1] + 0x86))
 end
 
+local function read_birb_name(base)
+	local addr = base + offset.name
+	local name = memory.read_u32_be(addr)
+	local name2 = memory.read_u16_be(addr+4)
+	return decode_name(string.format('%X',name)) .. decode_name(string.format('%X',name2))
+end
+
 birblib.set_gil = set_gil
 birblib.set_rand_val = set_rand
 birblib.press_key = press_key
 birblib.wait_frames = wait_frames
 birblib.decode_name = decode_name
+birblib.read_birb_name = read_birb_name
 birblib.debug_birb = birb_debug
 birblib.shuffle = shuffle
 birblib.load_birbs = load_birbs
